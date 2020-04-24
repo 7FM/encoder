@@ -94,104 +94,116 @@ typedef uint8_t pinMode_t;
 #endif
 #define TEMPLATE_DEFINITION template <TEMPLATE_PARAMETERS>
 
+typedef enum {
+    Open = 0,
+
+    Held,
+    Released,
+
+    Clicked,
+    DoubleClicked
+} ButtonState;
+
 TEMPLATE_DEFINITION
 class ClickEncoder {
   public:
-    typedef enum Button_e {
-        Open = 0,
-        Closed,
+    static void init(uint8_t stepsPerNotch = 4);
 
-        Pressed,
-        Held,
-        Released,
-
-        Clicked,
-        DoubleClicked
-
-    } Button;
-
-    ClickEncoder(uint8_t stepsPerNotch = 4);
-
-    void service();
-    int16_t getValue();
+    static void service();
+    static int16_t getValue();
 
 #ifndef WITHOUT_BUTTON
-    Button getButton();
+    static ButtonState getButtonState();
 #endif
 
 #ifndef WITHOUT_BUTTON
 
-    void setDoubleClickEnabled(const bool &d) {
+    static inline void setDoubleClickEnabled(bool d) {
         doubleClickEnabled = d;
     }
 
-    bool getDoubleClickEnabled() const {
+    static inline bool getDoubleClickEnabled() __attribute__((always_inline)) {
         return doubleClickEnabled;
     }
 
-    void setButtonHeldEnabled(const bool &d) {
+    static inline void setButtonHeldEnabled(bool d) {
         buttonHeldEnabled = d;
     }
 
-    bool getButtonHeldEnabled() const {
+    static inline bool getButtonHeldEnabled() __attribute__((always_inline)) {
         return buttonHeldEnabled;
-    }
-
-    void setButtonOnPinZeroEnabled(const bool &d) {
-        buttonOnPinZeroEnabled = d;
-    }
-
-    bool getButtonOnPinZeroEnabled() const {
-        return buttonOnPinZeroEnabled;
     }
 #endif
 
-    void setAccelerationEnabled(const bool &a) {
+    static inline void setAccelerationEnabled(bool a) {
         accelerationEnabled = a;
         if (!accelerationEnabled) {
             acceleration = 0;
         }
     }
 
-    bool getAccelerationEnabled() const {
+    static inline bool getAccelerationEnabled() __attribute__((always_inline)) {
         return accelerationEnabled;
     }
 
-    uint8_t getStepsPerNotch() const {
+    static inline uint8_t getStepsPerNotch() __attribute__((always_inline)) {
         return steps;
     }
 
-    void setStepsPerNotch(uint8_t stepsPerNotch) {
+    static inline void setStepsPerNotch(uint8_t stepsPerNotch) {
         steps = stepsPerNotch;
     }
 
 #ifndef WITHOUT_BUTTON
   protected:
-    bool getPinState() const;
+    inline static bool getPinState() __attribute__((always_inline));
 #endif
 
   protected:
-    uint8_t steps;
+    static uint8_t steps;
+    static bool accelerationEnabled;
+    static volatile int16_t delta;
+    static volatile int16_t last;
+    static volatile uint16_t acceleration;
 
-    bool accelerationEnabled;
 #ifndef WITHOUT_BUTTON
-    bool doubleClickEnabled;
-    bool buttonHeldEnabled;
-    bool buttonOnPinZeroEnabled = false;
-    uint16_t keyDownTicks = 0;
-    uint16_t doubleClickTicks = 0;
-    unsigned long lastButtonCheck = 0;
-    volatile Button button;
+    static bool doubleClickEnabled;
+    static bool buttonHeldEnabled;
+    static uint16_t keyDownTicks;
+    static uint16_t doubleClickTicks;
+    static unsigned long lastButtonCheck;
+    static volatile ButtonState buttonState;
 #endif
-    volatile int16_t delta = 0;
-    volatile int16_t last = 0;
-    volatile uint16_t acceleration = 0;
-
 #if ENC_DECODER != ENC_NORMAL
     static const int8_t table[16];
 #endif
 };
 
+#ifndef WITHOUT_BUTTON
+TEMPLATE_TYPES
+volatile ButtonState ClickEncoder<TEMPLATE_TYPE_NAMES>::buttonState = Open;
+TEMPLATE_TYPES
+bool ClickEncoder<TEMPLATE_TYPE_NAMES>::doubleClickEnabled = true;
+TEMPLATE_TYPES
+bool ClickEncoder<TEMPLATE_TYPE_NAMES>::buttonHeldEnabled = true;
+TEMPLATE_TYPES
+uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::keyDownTicks = 0;
+TEMPLATE_TYPES
+uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::doubleClickTicks = 0;
+TEMPLATE_TYPES
+unsigned long ClickEncoder<TEMPLATE_TYPE_NAMES>::lastButtonCheck = 0;
+#endif
+
+TEMPLATE_TYPES
+uint8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::steps;
+TEMPLATE_TYPES
+bool ClickEncoder<TEMPLATE_TYPE_NAMES>::accelerationEnabled = true;
+TEMPLATE_TYPES
+volatile int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::delta = 0;
+TEMPLATE_TYPES
+volatile int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::last = 0;
+TEMPLATE_TYPES
+volatile uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::acceleration = 0;
 // ----------------------------------------------------------------------------
 #include "ClickEncoder.tpp"
 
