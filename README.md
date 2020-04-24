@@ -8,6 +8,7 @@ Arduino RotaryEncoder with Button Implementation.
 - Timer-Based: Works on any IO-Pin.
 - Supports rotary acceleration, so when the encoder is rotated faster, the encoders value will increment faster
 - Button reports multiple states: `Clicked`, `DoubleClicked`, `Held` and `Released`
+- Use optimized IO access using https://github.com/7FM/FastPin based on the library FastLED
 
 Encoder and button can be connected to any input pin, as this library requires it's timer interrupt service routine ClickEncoder:service() to be called every millisecond. The example uses [TimerOne] for that.
 
