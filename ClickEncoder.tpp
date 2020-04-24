@@ -10,11 +10,6 @@
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
-// Button configuration (values for 1ms timer service calls)
-//
-#define ENC_BUTTONINTERVAL 10 // check buttonState every x milliseconds, also debouce time
-
-// ----------------------------------------------------------------------------
 // Acceleration configuration (for 1000Hz calls to ::service())
 //
 #define ENC_ACCEL_TOP 3072 // max. acceleration: *12 (val >> 8)

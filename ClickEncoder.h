@@ -12,6 +12,11 @@
 #ifndef __have__ClickEncoder_h__
 #define __have__ClickEncoder_h__
 
+// ----------------------------------------------------------------------------
+// Button configuration (values for 1ms timer service calls)
+//
+#define DEFAULT_ENC_BUTTONINTERVAL 10 // check buttonState every x milliseconds, also debouce time
+
 // ---Button defaults-------------------------------------------------------------
 
 #define BTN_DOUBLECLICKTIME 400 // second click within 400ms
@@ -52,21 +57,23 @@ typedef uint8_t pinMode_t;
 #endif
 
 #ifndef WITHOUT_BUTTON
-#define TEMPLATE_PARAMETERS                                        \
-    uint8_t pinA,                                                  \
-        uint8_t pinB,                                              \
-        int8_t pinBTN,                                             \
-        bool pinsActive = false,                                   \
-             uint16_t buttonHoldTime = BTN_HOLDTIME,               \
-             uint16_t buttonDoubleClickTime = BTN_DOUBLECLICKTIME, \
-             bool analogInput = false,                             \
-             int16_t anlogActiveRangeLow = 0,                      \
+#define TEMPLATE_PARAMETERS                                           \
+    uint8_t pinA,                                                     \
+        uint8_t pinB,                                                 \
+        int8_t pinBTN,                                                \
+        bool pinsActive = false,                                      \
+             uint8_t ENC_BUTTONINTERVAL = DEFAULT_ENC_BUTTONINTERVAL, \
+             uint16_t buttonHoldTime = BTN_HOLDTIME,                  \
+             uint16_t buttonDoubleClickTime = BTN_DOUBLECLICKTIME,    \
+             bool analogInput = false,                                \
+             int16_t anlogActiveRangeLow = 0,                         \
              int16_t anlogActiveRangeHigh = 0
 
 #define TEMPLATE_TYPES template <uint8_t pinA,                   \
                                  uint8_t pinB,                   \
                                  int8_t pinBTN,                  \
                                  bool pinsActive,                \
+                                 uint8_t ENC_BUTTONINTERVAL,     \
                                  uint16_t buttonHoldTime,        \
                                  uint16_t buttonDoubleClickTime, \
                                  bool analogInput,               \
@@ -77,6 +84,7 @@ typedef uint8_t pinMode_t;
                             pinB,                  \
                             pinBTN,                \
                             pinsActive,            \
+                            ENC_BUTTONINTERVAL,    \
                             buttonHoldTime,        \
                             buttonDoubleClickTime, \
                             analogInput,           \
@@ -84,13 +92,15 @@ typedef uint8_t pinMode_t;
                             anlogActiveRangeHigh
 #else
 #define TEMPLATE_PARAMETERS uint8_t pinA, uint8_t pinB, \
-                            bool pinsActive = false
+                            bool pinsActive = false,    \
+                                 uint8_t ENC_BUTTONINTERVAL = DEFAULT_ENC_BUTTONINTERVAL
 
 #define TEMPLATE_TYPES template <uint8_t pinA, uint8_t pinB, \
-                                 bool pinsActive>
+                                 bool pinsActive,            \
+                                 uint8_t ENC_BUTTONINTERVAL>
 
 #define TEMPLATE_TYPE_NAMES pinA, pinB, \
-                            pinsActive
+                            pinsActive, ENC_BUTTONINTERVAL
 #endif
 #define TEMPLATE_DEFINITION template <TEMPLATE_PARAMETERS>
 
