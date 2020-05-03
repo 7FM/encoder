@@ -39,10 +39,10 @@ TEMPLATE_TYPES
 void ClickEncoder<TEMPLATE_TYPE_NAMES>::init(uint8_t stepsPerNotch) {
 
     steps = stepsPerNotch;
+    FastPin<pinA>::setInput();
+    FastPin<pinB>::setInput();
     if (pinsActive) {
-        FastPin<pinA>::setInput();
-        FastPin<pinA>::setInput();
-        FastPin<pinB>::lo();
+        FastPin<pinA>::lo();
         FastPin<pinB>::lo();
 
 #ifndef WITHOUT_BUTTON
@@ -52,8 +52,6 @@ void ClickEncoder<TEMPLATE_TYPE_NAMES>::init(uint8_t stepsPerNotch) {
         }
 #endif
     } else {
-        FastPin<pinA>::setInput();
-        FastPin<pinA>::setInput();
         FastPin<pinA>::hi();
         FastPin<pinB>::hi();
 

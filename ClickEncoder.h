@@ -215,6 +215,7 @@ volatile int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::last = 0;
 TEMPLATE_TYPES
 volatile uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::acceleration = 0;
 // ----------------------------------------------------------------------------
+
 #include "ClickEncoder.tpp"
 
 #endif // __have__ClickEncoder_h__
