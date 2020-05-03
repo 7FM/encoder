@@ -211,8 +211,8 @@ TEMPLATE_TYPES
 ButtonState ClickEncoder<TEMPLATE_TYPE_NAMES>::getButtonState() {
     noInterrupts();
     ButtonState ret = buttonState;
-    if (ret != ClickEncoder<TEMPLATE_TYPE_NAMES>::Held) {
-        buttonState = ClickEncoder<TEMPLATE_TYPE_NAMES>::Open; // reset
+    if (ret != Held) {
+        buttonState = Open; // reset
     }
     interrupts();
 
