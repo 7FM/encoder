@@ -10,13 +10,6 @@
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
-// Acceleration configuration (for 1000Hz calls to ::service())
-//
-#define ENC_ACCEL_TOP 3072 // max. acceleration: *12 (val >> 8)
-#define ENC_ACCEL_INC 25
-#define ENC_ACCEL_DEC 2
-
-// ----------------------------------------------------------------------------
 
 #if ENC_DECODER != ENC_NORMAL
 #if ENC_HALFSTEP
@@ -192,12 +185,12 @@ int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::getValue() {
     }
 
     int16_t r = 0;
-    int16_t accel = ((accelerationEnabled) ? (acceleration >> 8) : 0);
+    int16_t accel = ((accelerationEnabled) ? (acceleration >> 8) + 1 : 1);
 
     if (val < 0) {
-        r -= 1 + accel;
+        r = -accel;
     } else if (val > 0) {
-        r += 1 + accel;
+        r = accel;
     }
     interrupts();
 

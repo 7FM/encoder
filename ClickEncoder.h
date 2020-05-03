@@ -56,12 +56,22 @@ typedef WiringPinMode pinMode_t;
 typedef uint8_t pinMode_t;
 #endif
 
+// ----------------------------------------------------------------------------
+// Acceleration configuration (for 1000Hz calls to ::service())
+//
+#define DEFAULT_ENC_ACCEL_TOP 3072 // max. acceleration: *12 (val >> 8)
+#define DEFAULT_ENC_ACCEL_INC 25
+#define DEFAULT_ENC_ACCEL_DEC 2
+
 #ifndef WITHOUT_BUTTON
 #define TEMPLATE_PARAMETERS                                           \
     uint8_t pinA,                                                     \
         uint8_t pinB,                                                 \
         int8_t pinBTN,                                                \
         bool pinsActive = false,                                      \
+             uint16_t ENC_ACCEL_TOP = DEFAULT_ENC_ACCEL_TOP,          \
+             uint16_t ENC_ACCEL_INC = DEFAULT_ENC_ACCEL_INC,          \
+             uint16_t ENC_ACCEL_DEC = DEFAULT_ENC_ACCEL_DEC,          \
              uint8_t ENC_BUTTONINTERVAL = DEFAULT_ENC_BUTTONINTERVAL, \
              uint16_t buttonHoldTime = BTN_HOLDTIME,                  \
              uint16_t buttonDoubleClickTime = BTN_DOUBLECLICKTIME,    \
@@ -73,6 +83,9 @@ typedef uint8_t pinMode_t;
                                  uint8_t pinB,                   \
                                  int8_t pinBTN,                  \
                                  bool pinsActive,                \
+                                 uint16_t ENC_ACCEL_TOP,         \
+                                 uint16_t ENC_ACCEL_INC,         \
+                                 uint16_t ENC_ACCEL_DEC,         \
                                  uint8_t ENC_BUTTONINTERVAL,     \
                                  uint16_t buttonHoldTime,        \
                                  uint16_t buttonDoubleClickTime, \
@@ -84,6 +97,9 @@ typedef uint8_t pinMode_t;
                             pinB,                  \
                             pinBTN,                \
                             pinsActive,            \
+                            ENC_ACCEL_TOP,         \
+                            ENC_ACCEL_INC,         \
+                            ENC_ACCEL_DEC,         \
                             ENC_BUTTONINTERVAL,    \
                             buttonHoldTime,        \
                             buttonDoubleClickTime, \
@@ -91,16 +107,23 @@ typedef uint8_t pinMode_t;
                             anlogActiveRangeLow,   \
                             anlogActiveRangeHigh
 #else
-#define TEMPLATE_PARAMETERS uint8_t pinA, uint8_t pinB, \
-                            bool pinsActive = false,    \
-                                 uint8_t ENC_BUTTONINTERVAL = DEFAULT_ENC_BUTTONINTERVAL
+#define TEMPLATE_PARAMETERS uint8_t pinA, uint8_t pinB,                          \
+                            bool pinsActive = false,                             \
+                                 uint16_t ENC_ACCEL_TOP = DEFAULT_ENC_ACCEL_TOP, \
+                                 uint16_t ENC_ACCEL_INC = DEFAULT_ENC_ACCEL_INC, \
+                                 uint16_t ENC_ACCEL_DEC = DEFAULT_ENC_ACCEL_DEC
 
 #define TEMPLATE_TYPES template <uint8_t pinA, uint8_t pinB, \
                                  bool pinsActive,            \
-                                 uint8_t ENC_BUTTONINTERVAL>
+                                 uint16_t ENC_ACCEL_TOP,     \
+                                 uint16_t ENC_ACCEL_INC,     \
+                                 uint16_t ENC_ACCEL_DEC>
 
-#define TEMPLATE_TYPE_NAMES pinA, pinB, \
-                            pinsActive, ENC_BUTTONINTERVAL
+#define TEMPLATE_TYPE_NAMES pinA, pinB,    \
+                            pinsActive,    \
+                            ENC_ACCEL_TOP, \
+                            ENC_ACCEL_INC, \
+                            ENC_ACCEL_DEC
 #endif
 #define TEMPLATE_DEFINITION template <TEMPLATE_PARAMETERS>
 
