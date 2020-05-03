@@ -224,7 +224,7 @@ inline bool ClickEncoder<TEMPLATE_TYPE_NAMES>::getPinState() {
     bool pinState;
     if (analogInput) {
         int16_t pinValue = FastPin<pinBTN>::analogRead();
-        pinState = ((pinValue >= anlogActiveRangeLow) && (pinValue <= anlogActiveRangeHigh)) ? false : true; // set result to LOW (buttonState pressed) if analog input is in range
+        pinState = ((pinValue >= anlogActiveRangeLow) && (pinValue <= anlogActiveRangeHigh)) ? pinsActive : !pinsActive; // set result to LOW (buttonState pressed) if analog input is in range
     } else {
         pinState = FastPin<pinBTN>::digitalRead();
     }
