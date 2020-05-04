@@ -184,15 +184,17 @@ int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::getValue() {
         delta = 0; // default to 1 step per notch
     }
 
-    int16_t r = 0;
     int16_t accel = ((accelerationEnabled) ? (acceleration >> 8) + 1 : 1);
+
+    interrupts();
+
+    int16_t r = 0;
 
     if (val < 0) {
         r = -accel;
     } else if (val > 0) {
         r = accel;
     }
-    interrupts();
 
     return r;
 }
@@ -202,18 +204,18 @@ int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::getValue() {
 #ifndef WITHOUT_BUTTON
 TEMPLATE_TYPES
 ButtonState ClickEncoder<TEMPLATE_TYPE_NAMES>::getButtonState() {
-    noInterrupts();
     ButtonState ret = buttonState;
     if (ret != Held) {
+        noInterrupts();
         buttonState = Open; // reset
+        interrupts();
     }
-    interrupts();
 
     return ret;
 }
 
 TEMPLATE_TYPES
-inline bool ClickEncoder<TEMPLATE_TYPE_NAMES>::getPinState() {
+bool ClickEncoder<TEMPLATE_TYPE_NAMES>::getPinState() {
     bool pinState;
     if (analogInput) {
         int16_t pinValue = FastPin<pinBTN>::analogRead();
