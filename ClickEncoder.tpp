@@ -174,32 +174,38 @@ void ClickEncoder<TEMPLATE_TYPE_NAMES>::service() {
 // ----------------------------------------------------------------------------
 TEMPLATE_TYPES
 int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::getValue() {
-    noInterrupts();
-    int16_t val = delta;
 
-    if (steps == 2) {
-        delta = val & 1;
-        val >>= 1;
-    } else if (steps == 4) {
-        delta = val & 3;
-        val >>= 2;
-    } else {
-        delta = 0; // default to 1 step per notch
-    }
+    // Interrupt safe multibyte read
+    uint16_t currentAccel;
+    do {
+        currentAccel = acceleration;
+    } while (currentAccel != acceleration);
 
-    int16_t accel = ((accelerationEnabled) ? (acceleration >> 8) + 1 : 1);
+    int16_t accel = accelerationEnabled ? (currentAccel >> 8) + 1 : 1;
 
-    interrupts();
+    // Reads of one byte values is fine when interrupts are enabled (needs only one cycle)
+    int8_t val = delta;
 
-    int16_t r = 0;
-
+    int8_t deltaChange = stepsPerNotch;
+    // We need some special treatment for negative values see: https://github.com/soligen2010/encoder/issues/14
     if (val < 0) {
-        r = -accel;
-    } else if (val > 0) {
-        r = accel;
+        val = -val;
+        accel = -accel;
+        deltaChange = -deltaChange;
     }
 
-    return r;
+    // Check if we have enough steps for a notch
+    if (val >= stepsPerNotch) {
+
+        // Apply delta changes
+        // Because we do not use modulo here this might cause "ghost moves" if not processed fast enough
+        // or you simply set the wrong value for stepsPerNotch
+        delta -= deltaChange;
+
+        return accel;
+    }
+
+    return 0;
 }
 
 // ----------------------------------------------------------------------------
