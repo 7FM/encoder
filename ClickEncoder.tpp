@@ -29,9 +29,7 @@ const int8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::table[16] __attribute__((__progm
 
 // ----------------------------------------------------------------------------
 TEMPLATE_TYPES
-void ClickEncoder<TEMPLATE_TYPE_NAMES>::init(uint8_t stepsPerNotch) {
-
-    steps = stepsPerNotch;
+void ClickEncoder<TEMPLATE_TYPE_NAMES>::init() {
     FastPin<pinA>::setInput();
     FastPin<pinB>::setInput();
     if (pinsActive) {

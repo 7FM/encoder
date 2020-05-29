@@ -62,6 +62,7 @@ typedef uint8_t pinMode_t;
 #define DEFAULT_ENC_ACCEL_TOP 3072 // max. acceleration: *12 (val >> 8)
 #define DEFAULT_ENC_ACCEL_INC 25
 #define DEFAULT_ENC_ACCEL_DEC 2
+#define DEFAULT_STEPS_PER_NOTCH 4
 
 #ifndef WITHOUT_BUTTON
 #define TEMPLATE_PARAMETERS                                           \
@@ -69,6 +70,7 @@ typedef uint8_t pinMode_t;
         uint8_t pinB,                                                 \
         int8_t pinBTN,                                                \
         bool pinsActive = false,                                      \
+             uint8_t stepsPerNotch = DEFAULT_STEPS_PER_NOTCH,                 \
              uint16_t ENC_ACCEL_TOP = DEFAULT_ENC_ACCEL_TOP,          \
              uint16_t ENC_ACCEL_INC = DEFAULT_ENC_ACCEL_INC,          \
              uint16_t ENC_ACCEL_DEC = DEFAULT_ENC_ACCEL_DEC,          \
@@ -83,6 +85,7 @@ typedef uint8_t pinMode_t;
                                  uint8_t pinB,                   \
                                  int8_t pinBTN,                  \
                                  bool pinsActive,                \
+                                 uint8_t stepsPerNotch,                  \
                                  uint16_t ENC_ACCEL_TOP,         \
                                  uint16_t ENC_ACCEL_INC,         \
                                  uint16_t ENC_ACCEL_DEC,         \
@@ -97,6 +100,7 @@ typedef uint8_t pinMode_t;
                             pinB,                  \
                             pinBTN,                \
                             pinsActive,            \
+                            stepsPerNotch,                 \
                             ENC_ACCEL_TOP,         \
                             ENC_ACCEL_INC,         \
                             ENC_ACCEL_DEC,         \
@@ -109,18 +113,21 @@ typedef uint8_t pinMode_t;
 #else
 #define TEMPLATE_PARAMETERS uint8_t pinA, uint8_t pinB,                          \
                             bool pinsActive = false,                             \
+                                 uint8_t stepsPerNotch = DEFAULT_STEPS_PER_NOTCH,        \
                                  uint16_t ENC_ACCEL_TOP = DEFAULT_ENC_ACCEL_TOP, \
                                  uint16_t ENC_ACCEL_INC = DEFAULT_ENC_ACCEL_INC, \
                                  uint16_t ENC_ACCEL_DEC = DEFAULT_ENC_ACCEL_DEC
 
 #define TEMPLATE_TYPES template <uint8_t pinA, uint8_t pinB, \
                                  bool pinsActive,            \
+                                 uint8_t stepsPerNotch,              \
                                  uint16_t ENC_ACCEL_TOP,     \
                                  uint16_t ENC_ACCEL_INC,     \
                                  uint16_t ENC_ACCEL_DEC>
 
 #define TEMPLATE_TYPE_NAMES pinA, pinB,    \
                             pinsActive,    \
+                            stepsPerNotch,         \
                             ENC_ACCEL_TOP, \
                             ENC_ACCEL_INC, \
                             ENC_ACCEL_DEC
@@ -140,7 +147,7 @@ typedef enum {
 TEMPLATE_DEFINITION
 class ClickEncoder {
   public:
-    static void init(uint8_t stepsPerNotch = 4);
+    static void init();
 
     static inline void service() __attribute__((always_inline));
     static int16_t getValue();
@@ -179,21 +186,12 @@ class ClickEncoder {
         return accelerationEnabled;
     }
 
-    static inline uint8_t getStepsPerNotch() __attribute__((always_inline)) {
-        return steps;
-    }
-
-    static inline void setStepsPerNotch(uint8_t stepsPerNotch) {
-        steps = stepsPerNotch;
-    }
-
 #ifndef WITHOUT_BUTTON
   protected:
     inline static bool getPinState() __attribute__((always_inline));
 #endif
 
   protected:
-    static uint8_t steps;
     static bool accelerationEnabled;
     static volatile int8_t delta;
     static volatile int8_t last;
@@ -227,8 +225,6 @@ TEMPLATE_TYPES
 unsigned long ClickEncoder<TEMPLATE_TYPE_NAMES>::lastButtonCheck = 0;
 #endif
 
-TEMPLATE_TYPES
-uint8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::steps;
 TEMPLATE_TYPES
 bool ClickEncoder<TEMPLATE_TYPE_NAMES>::accelerationEnabled = true;
 TEMPLATE_TYPES
