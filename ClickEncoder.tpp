@@ -68,14 +68,17 @@ void ClickEncoder<TEMPLATE_TYPE_NAMES>::init(uint8_t stepsPerNotch) {
 // ----------------------------------------------------------------------------
 // call this every 1 millisecond via timer ISR
 //
+//TODO check if less is fine too! Because I dont want to waste as much processing power into this!!
 TEMPLATE_TYPES
 void ClickEncoder<TEMPLATE_TYPE_NAMES>::service() {
-    if (accelerationEnabled) { // decelerate every tick
-        uint16_t prevAcc = acceleration;
-        acceleration -= ENC_ACCEL_DEC;
-        if (acceleration > prevAcc) { // handle overflow of MSB is set
-            acceleration = 0;
-        }
+
+    uint16_t nextAcceleration = acceleration;
+
+    if (accelerationEnabled) {
+        // decelerate every tick
+        uint16_t decreasedAcc = nextAcceleration - ENC_ACCEL_DEC;
+        // handle underflow
+        nextAcceleration = decreasedAcc > nextAcceleration ? 0 : decreasedAcc;
     }
 
 #if ENC_DECODER == ENC_FLAKY
@@ -105,20 +108,22 @@ void ClickEncoder<TEMPLATE_TYPE_NAMES>::service() {
 
     int8_t diff = last - curr;
 
-    if (diff & 1) { // bit 0 = step
+    if (diff & 0b01) { // bit at index 0 = step
         last = curr;
-        delta += (diff & 2) - 1; // bit 1 = direction (+/-)
+        delta += (diff & 0b10) - 1; // bit at index 1 = direction (1/0) means (+/-)
 #else
 #error "Error: define ENC_DECODER to ENC_NORMAL or ENC_FLAKY"
 #endif
         if (accelerationEnabled) {
             // increment accelerator if encoder has been moved
-            uint16_t increasedAcc = acceleration + ENC_ACCEL_INC;
-            if (increasedAcc <= ENC_ACCEL_TOP) {
-                acceleration = increasedAcc;
-            }
+            uint16_t increasedAcc = nextAcceleration + ENC_ACCEL_INC;
+            // We ignore overflows here because it is very unlikely to achieve a accerleration which exceeds 65535
+            nextAcceleration = increasedAcc < ENC_ACCEL_TOP ? increasedAcc : ENC_ACCEL_TOP;
         }
     }
+
+    // Apply acceleration changes
+    acceleration = nextAcceleration;
 
     // handle buttonState
 #ifndef WITHOUT_BUTTON
@@ -206,9 +211,8 @@ TEMPLATE_TYPES
 ButtonState ClickEncoder<TEMPLATE_TYPE_NAMES>::getButtonState() {
     ButtonState ret = buttonState;
     if (ret != Held) {
-        noInterrupts();
+        // Reads & writes of one byte values is fine when interrupts are enabled (needs only one cycle)
         buttonState = Open; // reset
-        interrupts();
     }
 
     return ret;

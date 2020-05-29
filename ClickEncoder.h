@@ -142,7 +142,7 @@ class ClickEncoder {
   public:
     static void init(uint8_t stepsPerNotch = 4);
 
-    static void service();
+    static inline void service() __attribute__((always_inline));
     static int16_t getValue();
 
 #ifndef WITHOUT_BUTTON
@@ -195,8 +195,8 @@ class ClickEncoder {
   protected:
     static uint8_t steps;
     static bool accelerationEnabled;
-    static volatile int16_t delta;
-    static volatile int16_t last;
+    static volatile int8_t delta;
+    static volatile int8_t last;
     static volatile uint16_t acceleration;
 
 #ifndef WITHOUT_BUTTON
@@ -232,9 +232,9 @@ uint8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::steps;
 TEMPLATE_TYPES
 bool ClickEncoder<TEMPLATE_TYPE_NAMES>::accelerationEnabled = true;
 TEMPLATE_TYPES
-volatile int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::delta = 0;
+volatile int8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::delta = 0;
 TEMPLATE_TYPES
-volatile int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::last = 0;
+volatile int8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::last = 0;
 TEMPLATE_TYPES
 volatile uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::acceleration = 0;
 // ----------------------------------------------------------------------------
