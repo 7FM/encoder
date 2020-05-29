@@ -59,7 +59,7 @@ typedef uint8_t pinMode_t;
 // ----------------------------------------------------------------------------
 // Acceleration configuration (for 1000Hz calls to ::service())
 //
-#define DEFAULT_ENC_ACCEL_TOP 3072 // max. acceleration: *12 (val >> 8)
+#define DEFAULT_ENC_ACCEL_TOP 3072 // max. acceleration: 12 encoded as maxAccel * pow(2, 8)
 #define DEFAULT_ENC_ACCEL_INC 25
 #define DEFAULT_ENC_ACCEL_DEC 2
 #define DEFAULT_STEPS_PER_NOTCH 4
