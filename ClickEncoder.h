@@ -15,12 +15,12 @@
 // ----------------------------------------------------------------------------
 // Button configuration (values for 1ms timer service calls)
 //
-#define DEFAULT_ENC_BUTTONINTERVAL 10 // check buttonState every x milliseconds, also debouce time
+#define DEFAULT_ENC_BUTTONINTERVAL 32 // check buttonState every x milliseconds, also debouce time
 
 // ---Button defaults-------------------------------------------------------------
 
-#define BTN_DOUBLECLICKTIME 400 // second click within 400ms
-#define BTN_HOLDTIME 1000       // report held button after 1s
+#define BTN_DOUBLECLICKTIME 512 // second click within 512ms
+#define BTN_HOLDTIME 1024       // report held button after ~1s
 
 // ----------------------------------------------------------------------------
 
@@ -158,6 +158,21 @@ class ClickEncoder {
     static void init();
 
     static inline void service() __attribute__((always_inline));
+#if defined(ROTARY_ISR_SERVICE) && defined(SPLIT_ROTARY_ISR_SERVICE)
+    static inline bool servicePinA() __attribute__((always_inline));
+    static inline bool servicePinB() __attribute__((always_inline));
+#endif
+
+#ifndef ROTARY_ISR_SERVICE
+  private:
+#endif
+#if !defined(ROTARY_ISR_SERVICE) || !defined(SPLIT_ROTARY_ISR_SERVICE)
+    static inline bool rotaryService() __attribute__((always_inline));
+#endif
+#ifndef ROTARY_ISR_SERVICE
+  public:
+#endif
+
     static int16_t getValue();
 
 #ifndef WITHOUT_BUTTON
@@ -188,11 +203,22 @@ class ClickEncoder {
         if (!accelerationEnabled) {
             acceleration = 0;
         }
+#ifdef ROTARY_ACCEL_OPTIMIZATION
+        else {
+            // Reset acceleration change counters
+            accelDec = 0;
+            accelInc = 0;
+        }
+#endif
     }
 
     static inline bool getAccelerationEnabled() __attribute__((always_inline)) {
         return accelerationEnabled;
     }
+
+  private:
+    static inline void incAcceleration() __attribute__((always_inline));
+    static inline void decAcceleration() __attribute__((always_inline));
 
 #ifndef WITHOUT_BUTTON
   protected:
@@ -203,14 +229,22 @@ class ClickEncoder {
     static bool accelerationEnabled;
     static volatile int8_t delta;
     static volatile int8_t last;
+#ifndef ROTARY_ACCEL_OPTIMIZATION
     static volatile uint16_t acceleration;
+#else
+    static uint16_t acceleration;
+    static volatile uint8_t accelDec;
+    static volatile uint8_t accelInc;
+#endif
 
 #ifndef WITHOUT_BUTTON
     static bool doubleClickEnabled;
     static bool buttonHeldEnabled;
     static uint16_t keyDownTicks;
     static uint16_t doubleClickTicks;
+#ifndef ROTARY_ISR_SERVICE
     static unsigned long lastButtonCheck;
+#endif
     static volatile ButtonState buttonState;
 #endif
 #if ENC_DECODER != ENC_NORMAL
@@ -229,8 +263,10 @@ TEMPLATE_TYPES
 uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::keyDownTicks = 0;
 TEMPLATE_TYPES
 uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::doubleClickTicks = 0;
+#ifndef ROTARY_ISR_SERVICE
 TEMPLATE_TYPES
 unsigned long ClickEncoder<TEMPLATE_TYPE_NAMES>::lastButtonCheck = 0;
+#endif
 #endif
 
 TEMPLATE_TYPES
@@ -239,8 +275,18 @@ TEMPLATE_TYPES
 volatile int8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::delta = 0;
 TEMPLATE_TYPES
 volatile int8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::last = 0;
+
+#ifndef ROTARY_ACCEL_OPTIMIZATION
 TEMPLATE_TYPES
 volatile uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::acceleration = 0;
+#else
+TEMPLATE_TYPES
+uint16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::acceleration = 0;
+TEMPLATE_TYPES
+volatile uint8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::accelDec = 0;
+TEMPLATE_TYPES
+volatile uint8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::accelInc = 0;
+#endif
 // ----------------------------------------------------------------------------
 
 #include "ClickEncoder.tpp"

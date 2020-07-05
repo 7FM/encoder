@@ -64,21 +64,105 @@ void ClickEncoder<TEMPLATE_TYPE_NAMES>::init() {
 }
 
 // ----------------------------------------------------------------------------
-// call this every 1 millisecond via timer ISR
-//
-//TODO check if less is fine too! Because I dont want to waste as much processing power into this!!
+
 TEMPLATE_TYPES
-void ClickEncoder<TEMPLATE_TYPE_NAMES>::service() {
-
-    uint16_t nextAcceleration = acceleration;
-
+void ClickEncoder<TEMPLATE_TYPE_NAMES>::incAcceleration() {
+#ifndef ROTARY_ACCEL_OPTIMIZATION
     if (accelerationEnabled) {
+        // increment accelerator if encoder has been moved
+        uint16_t increasedAcc = acceleration + ENC_ACCEL_INC;
+        // Apply acceleration changes
+        // We ignore overflows here because it is very unlikely to achieve a accerleration which exceeds 65535
+        acceleration = increasedAcc < ENC_ACCEL_TOP ? increasedAcc : ENC_ACCEL_TOP;
+    }
+#else
+    // We can always change this field as it is faster than checking first if acceleration is anabled
+    ++accelInc;
+#endif
+}
+
+TEMPLATE_TYPES
+void ClickEncoder<TEMPLATE_TYPE_NAMES>::decAcceleration() {
+#ifndef ROTARY_ACCEL_OPTIMIZATION
+    if (accelerationEnabled) {
+        uint16_t nextAcceleration = acceleration;
         // decelerate every tick
         uint16_t decreasedAcc = nextAcceleration - ENC_ACCEL_DEC;
         // handle underflow
-        nextAcceleration = decreasedAcc > nextAcceleration ? 0 : decreasedAcc;
+        // Apply acceleration changes
+        acceleration = decreasedAcc > nextAcceleration ? 0 : decreasedAcc;
     }
+#else
+    // We can always change this field as it is faster than checking first if acceleration is anabled
+    ++accelDec;
+#endif
+}
 
+#if defined(ROTARY_ISR_SERVICE) && defined(SPLIT_ROTARY_ISR_SERVICE)
+#define _LAST_PIN_A_STATE_OFFSET 7
+#define _LAST_PIN_B_STATE_OFFSET 6
+
+TEMPLATE_TYPES
+bool ClickEncoder<TEMPLATE_TYPE_NAMES>::servicePinA() {
+
+    int8_t _last = last;
+
+    bool lastPinAState = (_last & _BV(_LAST_PIN_A_STATE_OFFSET)) == _BV(_LAST_PIN_A_STATE_OFFSET);
+    bool currentPinAState = FastPin<pinA>::digitalRead() == pinsActive;
+
+    // Validate if there really was a toggle and this was not called due to jitter
+    if (currentPinAState != lastPinAState) {
+        int8_t curr = _last ^ 3 ^ _BV(_LAST_PIN_A_STATE_OFFSET);
+
+        last = curr;
+
+        // Remove last pin state information
+        curr &= 0x03;
+        _last &= 0x03;
+
+        int8_t diff = _last - curr;
+
+        delta += (diff & 0b010) - 1; // bit at index 1 = direction (1/0) means (+/-)
+
+        incAcceleration();
+
+        return true;
+    }
+    return false;
+}
+
+TEMPLATE_TYPES
+bool ClickEncoder<TEMPLATE_TYPE_NAMES>::servicePinB() {
+
+    int8_t _last = last;
+
+    bool lastPinBState = (_last & _BV(_LAST_PIN_B_STATE_OFFSET)) == _BV(_LAST_PIN_B_STATE_OFFSET);
+    bool currentPinBState = FastPin<pinB>::digitalRead() == pinsActive;
+
+    // Validate if there really was a toggle and this was not called due to jitter
+    if (currentPinBState != lastPinBState) {
+        int8_t curr = _last ^ 1 ^ _BV(_LAST_PIN_B_STATE_OFFSET);
+
+        last = curr;
+
+        // Remove last pin state information
+        curr &= 0x03;
+        _last &= 0x03;
+
+        delta += curr - _last;
+
+        incAcceleration();
+
+        return true;
+    }
+    return false;
+}
+#endif
+
+#if !defined(ROTARY_ISR_SERVICE) || !defined(SPLIT_ROTARY_ISR_SERVICE)
+// We expect that interrupts will be disabled during executing this function inside a ISR
+TEMPLATE_TYPES
+bool ClickEncoder<TEMPLATE_TYPE_NAMES>::rotaryService() {
 #if ENC_DECODER == ENC_FLAKY
     last = (last << 2) & 0x0F;
 
@@ -106,67 +190,87 @@ void ClickEncoder<TEMPLATE_TYPE_NAMES>::service() {
 
     int8_t diff = last - curr;
 
-    if (diff & 0b01) { // bit at index 0 = step
+    bool detectedStep = (diff & 0b01) == 0b01;
+
+    if (detectedStep) { // bit at index 0 = step
         last = curr;
-        delta += (diff & 0b10) - 1; // bit at index 1 = direction (1/0) means (+/-)
-#else
-#error "Error: define ENC_DECODER to ENC_NORMAL or ENC_FLAKY"
+        delta += (diff & 0b010) - 1; // bit at index 1 = direction (1/0) means (+/-)
 #endif
-        if (accelerationEnabled) {
-            // increment accelerator if encoder has been moved
-            uint16_t increasedAcc = nextAcceleration + ENC_ACCEL_INC;
-            // We ignore overflows here because it is very unlikely to achieve a accerleration which exceeds 65535
-            nextAcceleration = increasedAcc < ENC_ACCEL_TOP ? increasedAcc : ENC_ACCEL_TOP;
-        }
+        incAcceleration();
     }
 
-    // Apply acceleration changes
-    acceleration = nextAcceleration;
+    return detectedStep;
+}
+#endif
+
+// This function still needs to be polled... else we have no decreasing acceleration!
+TEMPLATE_TYPES
+void ClickEncoder<TEMPLATE_TYPE_NAMES>::service() {
+
+    decAcceleration();
+
+#ifndef ROTARY_ISR_SERVICE
+    rotaryService();
+#endif
 
     // handle buttonState
 #ifndef WITHOUT_BUTTON
+
+// NOTE: We expect that this routine does not get called with 1 kHz anymore, as this would be wasteful AF!
+// Therefore it is expected that this service routine already gets called in the wanted ENC_BUTTONINTERVAL => simpler code
+#ifndef ROTARY_ISR_SERVICE
     unsigned long currentMillis = millis();
+    /*
     if (currentMillis < lastButtonCheck) {
         lastButtonCheck = 0;
     }
-    // Handle case when millis() wraps back around to zero
+    */
+#endif
     // check buttonState only, if a pin has been provided
-    // checking buttonState is sufficient every 10-30ms
-    if (pinBTN >= 0 && ((currentMillis - lastButtonCheck) >= ENC_BUTTONINTERVAL)) {
-        lastButtonCheck = currentMillis;
+    if (pinBTN >= 0) {
 
-        if (getPinState() == pinsActive) { // key is down
-            ++keyDownTicks;
-            if (buttonHeldEnabled && keyDownTicks > (buttonHoldTime / ENC_BUTTONINTERVAL)) {
-                buttonState = Held;
-            }
-        } else {                    // key is now up
-            if (keyDownTicks > 1) { //Make sure key was down through 1 complete tick to prevent random transients from registering as click
-                if (buttonState == Held) {
-                    buttonState = Released;
-                    doubleClickTicks = 0;
-                } else {
-#define ENC_SINGLECLICKONLY 1
-                    if (doubleClickTicks > ENC_SINGLECLICKONLY) { // prevent trigger in single click mode
-                        if (doubleClickTicks < (buttonDoubleClickTime / ENC_BUTTONINTERVAL)) {
-                            buttonState = DoubleClicked;
-                            doubleClickTicks = 0;
-                        }
+#ifndef ROTARY_ISR_SERVICE
+        // Handle case when millis() wraps back around to zero
+        // checking buttonState is sufficient every 10-30ms
+        if ((unsigned long)(currentMillis - lastButtonCheck) >= ENC_BUTTONINTERVAL) {
+            lastButtonCheck = currentMillis;
+#endif
+
+            if (getPinState() == pinsActive) { // key is down
+                ++keyDownTicks;
+                if (buttonHeldEnabled && keyDownTicks > (buttonHoldTime / ENC_BUTTONINTERVAL)) {
+                    buttonState = Held;
+                }
+            } else {                    // key is now up
+                if (keyDownTicks > 1) { //Make sure key was down through 1 complete tick to prevent random transients from registering as click
+                    if (buttonState == Held) {
+                        buttonState = Released;
+                        doubleClickTicks = 0;
                     } else {
-                        doubleClickTicks = (doubleClickEnabled) ? (buttonDoubleClickTime / ENC_BUTTONINTERVAL) : ENC_SINGLECLICKONLY;
+#define ENC_SINGLECLICKONLY 1
+                        if (doubleClickTicks > ENC_SINGLECLICKONLY) { // prevent trigger in single click mode
+                            if (doubleClickTicks < (buttonDoubleClickTime / ENC_BUTTONINTERVAL)) {
+                                buttonState = DoubleClicked;
+                                doubleClickTicks = 0;
+                            }
+                        } else {
+                            doubleClickTicks = (doubleClickEnabled) ? (buttonDoubleClickTime / ENC_BUTTONINTERVAL) : ENC_SINGLECLICKONLY;
+                        }
                     }
                 }
+
+                keyDownTicks = 0;
             }
 
-            keyDownTicks = 0;
-        }
-
-        if (doubleClickTicks > 0) {
-            --doubleClickTicks;
-            if (doubleClickTicks == 0) {
-                buttonState = Clicked;
+            if (doubleClickTicks > 0) {
+                --doubleClickTicks;
+                if (doubleClickTicks == 0) {
+                    buttonState = Clicked;
+                }
             }
+#ifndef ROTARY_ISR_SERVICE
         }
+#endif
     }
 #endif // WITHOUT_BUTTON
 }
@@ -175,13 +279,33 @@ void ClickEncoder<TEMPLATE_TYPE_NAMES>::service() {
 TEMPLATE_TYPES
 int16_t ClickEncoder<TEMPLATE_TYPE_NAMES>::getValue() {
 
-    // Interrupt safe multibyte read
-    uint16_t currentAccel;
-    do {
-        currentAccel = acceleration;
-    } while (currentAccel != acceleration);
+    int16_t accel = 1;
 
-    int16_t accel = accelerationEnabled ? (currentAccel >> 8) + 1 : 1;
+    if (accelerationEnabled) {
+
+#ifndef ROTARY_ACCEL_OPTIMIZATION
+        uint16_t currentAccel;
+        // Interrupt safe multibyte read
+        do {
+            currentAccel = acceleration;
+        } while (currentAccel != acceleration);
+
+        accel += (currentAccel >> 8);
+#else
+        int16_t accelChange = accelInc * ENC_ACCEL_INC - accelDec * ENC_ACCEL_DEC;
+        acceleration += accelChange;
+
+        if (acceleration > ENC_ACCEL_TOP) {
+            acceleration = accelChange < 0 ? 0 : ENC_ACCEL_TOP;
+        }
+
+        // Reset acceleration change counters
+        accelDec = 0;
+        accelInc = 0;
+
+        accel += (acceleration >> 8);
+#endif
+    }
 
     // Reads of one byte values is fine when interrupts are enabled (needs only one cycle)
     int8_t val = delta;
