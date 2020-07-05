@@ -43,10 +43,18 @@
 #define ENC_DECODER ENC_NORMAL
 #endif
 
+#if ENC_DECODER != ENC_FLAKY && ENC_DECODER != ENC_NORMAL
+#error "Error: define ENC_DECODER to ENC_NORMAL or ENC_FLAKY"
+#endif
+
 #if ENC_DECODER == ENC_FLAKY
 #ifndef ENC_HALFSTEP
 #define ENC_HALFSTEP 1 // use table for half step per default
 #endif
+#endif
+
+#if defined(ROTARY_ISR_SERVICE) && defined(SPLIT_ROTARY_ISR_SERVICE) && ENC_DECODER != ENC_NORMAL
+#error "Splitting the rotary ISR service code is currently only supported for normal encoder!"
 #endif
 
 // ----------------------------------------------------------------------------
@@ -70,7 +78,7 @@ typedef uint8_t pinMode_t;
         uint8_t pinB,                                                 \
         int8_t pinBTN,                                                \
         bool pinsActive = false,                                      \
-             uint8_t stepsPerNotch = DEFAULT_STEPS_PER_NOTCH,                 \
+             uint8_t stepsPerNotch = DEFAULT_STEPS_PER_NOTCH,         \
              uint16_t ENC_ACCEL_TOP = DEFAULT_ENC_ACCEL_TOP,          \
              uint16_t ENC_ACCEL_INC = DEFAULT_ENC_ACCEL_INC,          \
              uint16_t ENC_ACCEL_DEC = DEFAULT_ENC_ACCEL_DEC,          \
@@ -85,7 +93,7 @@ typedef uint8_t pinMode_t;
                                  uint8_t pinB,                   \
                                  int8_t pinBTN,                  \
                                  bool pinsActive,                \
-                                 uint8_t stepsPerNotch,                  \
+                                 uint8_t stepsPerNotch,          \
                                  uint16_t ENC_ACCEL_TOP,         \
                                  uint16_t ENC_ACCEL_INC,         \
                                  uint16_t ENC_ACCEL_DEC,         \
@@ -100,7 +108,7 @@ typedef uint8_t pinMode_t;
                             pinB,                  \
                             pinBTN,                \
                             pinsActive,            \
-                            stepsPerNotch,                 \
+                            stepsPerNotch,         \
                             ENC_ACCEL_TOP,         \
                             ENC_ACCEL_INC,         \
                             ENC_ACCEL_DEC,         \
@@ -111,23 +119,23 @@ typedef uint8_t pinMode_t;
                             anlogActiveRangeLow,   \
                             anlogActiveRangeHigh
 #else
-#define TEMPLATE_PARAMETERS uint8_t pinA, uint8_t pinB,                          \
-                            bool pinsActive = false,                             \
-                                 uint8_t stepsPerNotch = DEFAULT_STEPS_PER_NOTCH,        \
-                                 uint16_t ENC_ACCEL_TOP = DEFAULT_ENC_ACCEL_TOP, \
-                                 uint16_t ENC_ACCEL_INC = DEFAULT_ENC_ACCEL_INC, \
+#define TEMPLATE_PARAMETERS uint8_t pinA, uint8_t pinB,                           \
+                            bool pinsActive = false,                              \
+                                 uint8_t stepsPerNotch = DEFAULT_STEPS_PER_NOTCH, \
+                                 uint16_t ENC_ACCEL_TOP = DEFAULT_ENC_ACCEL_TOP,  \
+                                 uint16_t ENC_ACCEL_INC = DEFAULT_ENC_ACCEL_INC,  \
                                  uint16_t ENC_ACCEL_DEC = DEFAULT_ENC_ACCEL_DEC
 
 #define TEMPLATE_TYPES template <uint8_t pinA, uint8_t pinB, \
                                  bool pinsActive,            \
-                                 uint8_t stepsPerNotch,              \
+                                 uint8_t stepsPerNotch,      \
                                  uint16_t ENC_ACCEL_TOP,     \
                                  uint16_t ENC_ACCEL_INC,     \
                                  uint16_t ENC_ACCEL_DEC>
 
 #define TEMPLATE_TYPE_NAMES pinA, pinB,    \
                             pinsActive,    \
-                            stepsPerNotch,         \
+                            stepsPerNotch, \
                             ENC_ACCEL_TOP, \
                             ENC_ACCEL_INC, \
                             ENC_ACCEL_DEC
