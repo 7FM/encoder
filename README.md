@@ -9,8 +9,15 @@ Arduino RotaryEncoder with Button Implementation.
 - Supports rotary acceleration, so when the encoder is rotated faster, the encoders value will increment faster
 - Button reports multiple states: `Clicked`, `DoubleClicked`, `Held` and `Released`
 - Use optimized IO access using https://github.com/7FM/FastPin based on the library FastLED
+- Support for interrupts:
+    * combined encoder pin toggle interrupt service routines (needed defines: ROTARY_ISR_SERVICE)
+    * per encoder pin toggle interrupt service routines (needed defines: ROTARY_ISR_SERVICE & SPLIT_ROTARY_ISR_SERVICE)
+    * button still needs polling else deceleration and button hold duration calculation would not work but that can be done every ~32ms (might even work less frequently, but not yet tested)
+    * return if a pin toggle was detected, as this information might be usefull for debouncing logic inside the interrupt service routine
+    * feel free to ask for an code example for AVR (arduino nano/uno) using per pin interrupts if necessary
+- Add optimization option for calculation the acceleration change only the getValue method (needed defines: ROTARY_ACCEL_OPTIMIZATION)
 
-Encoder and button can be connected to any input pin, as this library requires it's timer interrupt service routine ClickEncoder:service() to be called every millisecond. The example uses [TimerOne] for that.
+Encoder and button can be connected to any input pin, as this library requires it's timer interrupt service routine ClickEncoder:service() to be called ~~every millisecond~~. The example uses [TimerOne] for that.
 
 See the example application [ClickEncoderTest] for details,
 or see it in action at my modified [reflow oven controller]
