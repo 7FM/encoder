@@ -99,20 +99,20 @@ void ClickEncoder<TEMPLATE_TYPE_NAMES>::decAcceleration() {
 }
 
 #if defined(ROTARY_ISR_SERVICE) && defined(SPLIT_ROTARY_ISR_SERVICE)
-#define _LAST_PIN_A_STATE_OFFSET 7
-#define _LAST_PIN_B_STATE_OFFSET 6
+#define _LAST_PIN_A_STATE_MASK _BV(7)
+#define _LAST_PIN_B_STATE_MASK _BV(6)
 
 TEMPLATE_TYPES
 bool ClickEncoder<TEMPLATE_TYPE_NAMES>::servicePinA() {
 
     int8_t _last = last;
 
-    bool lastPinAState = (_last & _BV(_LAST_PIN_A_STATE_OFFSET)) == _BV(_LAST_PIN_A_STATE_OFFSET);
+    bool lastPinAState = (_last & _LAST_PIN_A_STATE_MASK) == _LAST_PIN_A_STATE_MASK;
     bool currentPinAState = FastPin<pinA>::digitalRead() == pinsActive;
 
     // Validate if there really was a toggle and this was not called due to jitter
     if (currentPinAState != lastPinAState) {
-        int8_t curr = _last ^ 3 ^ _BV(_LAST_PIN_A_STATE_OFFSET);
+        int8_t curr = _last ^ 3 ^ _LAST_PIN_A_STATE_MASK;
 
         last = curr;
 
@@ -136,12 +136,12 @@ bool ClickEncoder<TEMPLATE_TYPE_NAMES>::servicePinB() {
 
     int8_t _last = last;
 
-    bool lastPinBState = (_last & _BV(_LAST_PIN_B_STATE_OFFSET)) == _BV(_LAST_PIN_B_STATE_OFFSET);
+    bool lastPinBState = (_last & _LAST_PIN_B_STATE_MASK) == _LAST_PIN_B_STATE_MASK;
     bool currentPinBState = FastPin<pinB>::digitalRead() == pinsActive;
 
     // Validate if there really was a toggle and this was not called due to jitter
     if (currentPinBState != lastPinBState) {
-        int8_t curr = _last ^ 1 ^ _BV(_LAST_PIN_B_STATE_OFFSET);
+        int8_t curr = _last ^ 1 ^ _LAST_PIN_B_STATE_MASK;
 
         last = curr;
 
@@ -357,5 +357,10 @@ bool ClickEncoder<TEMPLATE_TYPE_NAMES>::getPinState() {
     }
     return pinState;
 }
+
+#if defined(ROTARY_ISR_SERVICE) && defined(SPLIT_ROTARY_ISR_SERVICE)
+#undef _LAST_PIN_A_STATE_MASK
+#undef _LAST_PIN_B_STATE_MASK
+#endif
 
 #endif

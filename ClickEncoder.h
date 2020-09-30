@@ -291,4 +291,16 @@ volatile uint8_t ClickEncoder<TEMPLATE_TYPE_NAMES>::accelInc = 0;
 
 #include "ClickEncoder.tpp"
 
+#undef DEFAULT_ENC_ACCEL_TOP
+#undef DEFAULT_ENC_ACCEL_INC
+#undef DEFAULT_ENC_ACCEL_DEC
+#undef DEFAULT_STEPS_PER_NOTCH
+#undef TEMPLATE_PARAMETERS
+#undef TEMPLATE_TYPES
+#undef TEMPLATE_TYPE_NAMES
+#undef TEMPLATE_DEFINITION
+#undef BTN_HOLDTIME
+#undef BTN_DOUBLECLICKTIME
+#undef DEFAULT_ENC_BUTTONINTERVAL
+
 #endif // __have__ClickEncoder_h__
